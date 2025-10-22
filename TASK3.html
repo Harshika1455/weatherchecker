@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task 3 - Advanced Weather Checker</title>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #89f7fe, #66a6ff);
+    transition: background 1s ease-in-out;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    text-align: center;
+    max-width: 450px;
+    width: 100%;
+    transition: 0.5s ease;
+  }
+
+  .card h2 {
+    color: #4a90e2;
+    margin-bottom: 15px;
+  }
+
+  input[type="text"] {
+    padding: 12px;
+    width: 70%;
+    font-size: 15px;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    outline: none;
+    margin-bottom: 10px;
+  }
+  input:focus {
+    border-color: #4a90e2;
+  }
+
+  button {
+    padding: 12px 20px;
+    font-size: 15px;
+    background: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    margin: 5px;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+  button:hover {
+    background: #3b78c2;
+    transform: translateY(-1px);
+  }
+
+  #weatherResult {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+    color: #333;
+  }
+  #weatherResult img {
+    width: 90px;
+    height: 90px;
+  }
+  .temp {
+    font-size: 26px;
+    font-weight: bold;
+    margin: 8px 0;
+  }
+  .details {
+    margin-top: 10px;
+    text-align: left;
+    font-size: 14px;
+  }
+  .details p {
+    margin: 5px 0;
+  }
+
+  @media(max-width: 600px) {
+    .card {
+      width: 90%;
+    }
+    input[type="text"] {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>🌤 Weather Checker</h2>
+  <input type="text" id="cityInput" placeholder="Enter city name">
+  <br>
+  <button onclick="getWeather()">Check Weather</button>
+  <button onclick="getLocationWeather()">📍 Use My Location</button>
+  <div id="weatherResult"></div>
+</div>
+
+<script>
+  const apiKey = "cc4aac07ab0b87744677a28d2f379fc0"; // your key
+
+  async function getWeather(city) {
+    if (!city) city = document.getElementById("cityInput").value.trim();
+    if (city === "") {
+      alert("Please enter a city name");
+      return;
+    }
+
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+
+    fetchWeather(url);
+  }
+
+  async function getLocationWeather() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+        fetchWeather(url);
+      });
+    } else {
+      alert("Geolocation not supported!");
+    }
+  }
+
+  async function fetchWeather(url) {
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      const weatherDiv = document.getElementById("weatherResult");
+
+      if (data.cod == "404") {
+        weatherDiv.innerHTML = `<p style="color:red;">❌ City not found</p>`;
+      } else {
+        const iconCode = data.weather[0].icon;
+        const iconUrl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+        const condition = data.weather[0].main.toLowerCase();
+
+        // Background change
+        if (condition.includes("clear")) {
+          document.body.style.background = "linear-gradient(135deg, #fbc531, #f5f6fa)";
+        } else if (condition.includes("cloud")) {
+          document.body.style.background = "linear-gradient(135deg, #dcdde1, #7f8fa6)";
+        } else if (condition.includes("rain")) {
+          document.body.style.background = "linear-gradient(135deg, #74b9ff, #0984e3)";
+        } else if (condition.includes("snow")) {
+          document.body.style.background = "linear-gradient(135deg, #dff9fb, #c7ecee)";
+        } else if (condition.includes("thunder")) {
+          document.body.style.background = "linear-gradient(135deg, #2f3640, #718093)";
+        } else {
+          document.body.style.background = "linear-gradient(135deg, #ffeaa7, #fab1a0)";
+        }
+
+        // Local date & time
+        const localTime = new Date(data.dt * 1000 + data.timezone * 1000);
+        
+        weatherDiv.innerHTML = `
+          <h3>🌆 ${data.name}, ${data.sys.country}</h3>
+          <p>🕒 ${localTime.toUTCString().slice(0, -3)}</p>
+          <img src="${iconUrl}" alt="Weather icon">
+          <p class="temp">🌡️ ${data.main.temp}°C</p>
+          <p>${data.weather[0].description}</p>
+          <div class="details">
+            <p>🌡 Min: ${data.main.temp_min}°C | Max: ${data.main.temp_max}°C</p>
+            <p>💧 Humidity: ${data.main.humidity}%</p>
+            <p>🌪 Wind: ${data.wind.speed} m/s</p>
+            <p>🧭 Pressure: ${data.main.pressure} hPa</p>
+          </div>
+        `;
+      }
+    } catch (err) {
+      document.getElementById("weatherResult").innerHTML = `<p style="color:red;">⚠️ Error fetching data</p>`;
+    }
+  }
+</script>
+
+</body>
+</html>
